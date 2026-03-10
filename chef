@@ -1,0 +1,31 @@
+chef generate repo chef-repo
+
+cd chef-repo
+
+
+knife.rb
+
+current_dir = File.dirname(__FILE__)
+
+
+log_level :info
+
+log_location STDOUT
+
+node_name "localuser"
+
+client_key "#{current_dir}/localuser.pem"
+
+chef_server_url "http://localhost:8889"
+
+cookbook_path ["#{current_dir}/../cookbooks"]
+
+
+openssl genrsa -out localuser.pem 2048
+
+chef-client –z
+
+
+knife node list –z
+
+knife client list –z
