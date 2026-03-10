@@ -1,0 +1,342 @@
+from flask import Flask, jsonify
+app = Flask(__name__)
+
+@app.route("/")
+def multiply():
+A=[[1,2],[3,4]]; B=[[5,6],[7,8]]
+R=[[sum(A[i][k]*B[k][j] for k in range(2)) for j in range(2)] for i in range(2)]
+return jsonify({"A":A,"B":B,"Result":R})
+
+app.run(port=8080)
+
+from flask import Flask, request, jsonify
+app = Flask(__name__)
+
+@app.route("/")
+def evens():
+n = int(request.args.get("n",10))
+return jsonify({"even":[2*i for i in range(1,n+1)]})
+
+app.run(port=5000)
+
+from flask import Flask, jsonify
+app = Flask(__name__)
+
+@app.route("/")
+def nth_largest():
+nums = [5, 2, 9, 1, 7]
+n = 1
+return jsonify({"nth_largest": sorted(nums, reverse=True)[n-1]})
+
+app.run(port=5004)
+
+
+
+from flask import Flask, request, jsonify, render_template_string
+
+import cx_Oracle
+
+app = Flask(__name__)
+
+def get_connection():
+
+   return cx_Oracle.connect(
+
+       user="test47",
+
+       password="test47",
+
+       dsn="PSGCASLABS.labs-psgcas.com:1521/itora"
+
+   )
+
+HTML_PAGE = """
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+   <title>Login & Signup</title>
+
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="container mt-5">
+
+<h3>Login</h3>
+
+<form id="loginForm">
+
+   <div class="mb-3">
+
+       <input type="text" class="form-control" name="username" placeholder="Username" required>
+
+   </div>
+
+   <div class="mb-3">
+
+       <input type="password" class="form-control" name="password" placeholder="Password" required>
+
+   </div>
+
+   <button type="submit" class="btn btn-primary">Login</button>
+
+</form>
+
+<hr>
+
+<h3>Signup</h3>
+
+<form id="signupForm">
+
+   <div class="mb-3">
+
+       <input type="text" class="form-control" name="username" placeholder="New Username" required>
+
+   </div>
+
+   <div class="mb-3">
+
+       <input type="password" class="form-control" name="password" placeholder="New Password" required>
+
+   </div>
+
+   <button type="submit" class="btn btn-success">Signup</button>
+
+</form>
+
+<!-- Toast -->
+
+<div class="toast position-fixed bottom-0 end-0 p-3" id="liveToast">
+
+   <div class="toast-header">
+
+       <strong class="me-auto">Status</strong>
+
+       <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+
+   </div>
+
+   <div class="toast-body" id="toastMessage"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+document.getElementById("loginForm").addEventListener("submit", function(e) {
+
+   e.preventDefault();
+
+   let formData = new FormData(this);
+
+   fetch("/login", { method: "POST", body: formData })
+
+   .then(res => res.json())
+
+   .then(data => {
+
+       let toast = new bootstrap.Toast(document.getElementById('liveToast'));
+
+       document.getElementById('toastMessage').innerText = data.status === "success" ? "Login Successful!" : "Invalid Username or Password!";
+
+       toast.show();
+
+   });
+
+});
+
+document.getElementById("signupForm").addEventListener("submit", function(e) {
+
+   e.preventDefault();
+
+   let formData = new FormData(this);
+
+   fetch("/signup", { method: "POST", body: formData })
+
+   .then(res => res.json())
+
+   .then(data => {
+
+       let toast = new bootstrap.Toast(document.getElementById('liveToast'));
+
+       if (data.status === "success") {
+
+           document.getElementById('toastMessage').innerText = "Signup Successful!";
+
+       } else {
+
+           document.getElementById('toastMessage').innerText = "Username already exists!";
+
+       }
+
+       toast.show();
+
+   });
+
+});
+
+</script>
+
+</body>
+
+</html>
+
+"""
+
+@app.route('/')
+
+def home():
+
+   return render_template_string(HTML_PAGE)
+
+@app.route('/login', methods=['POST'])
+
+def login():
+
+   username = request.form['username'].strip()
+
+   password = request.form['password'].strip()
+
+ 
+
+   conn = get_connection()
+
+   cursor = conn.cursor()
+
+   cursor.execute("""
+
+       SELECT * FROM usersmss
+
+       WHERE TRIM(UPPER(id)) = :id_val AND TRIM(password) = :pwd_val
+
+   """, {"id_val": username.upper(), "pwd_val": password})
+
+   user = cursor.fetchone()
+
+   cursor.close()
+
+   conn.close()
+
+   if user:
+
+       return jsonify({"status": "success"})
+
+   else:
+
+       return jsonify({"status": "fail"})
+
+@app.route('/signup', methods=['POST'])
+
+def signup():
+
+   username = request.form['username'].strip()
+
+   password = request.form['password'].strip()
+
+   conn = get_connection()
+
+   cursor = conn.cursor()
+
+   # Check if username already exists
+
+   cursor.execute("""
+
+       SELECT COUNT(*) FROM usersmss
+
+       WHERE TRIM(UPPER(id)) = :id_val
+
+   """, {"id_val": username.upper()})
+
+   if cursor.fetchone()[0] > 0:
+
+       cursor.close()
+
+       conn.close()
+
+       return jsonify({"status": "fail"})
+
+   # Insert new user
+
+   cursor.execute("""
+
+       INSERT INTO usersmss (id, password) VALUES (:id_val, :pwd_val)
+
+   """, {"id_val": username, "pwd_val": password})
+
+   conn.commit()
+
+   cursor.close()
+
+   conn.close()
+
+   return jsonify({"status": "success"})
+
+if __name__ == '__main__':
+
+   app.run(debug=True)
+
+
+Implementation of Login page with SQL
+
+ 
+
+import cx_Oracle
+
+DB_USER = "test47"
+
+DB_PASSWORD = "test47"
+
+DB_DSN = "PSGCASLABS.labs-psgcas.com:1521/itora"
+
+try:
+
+   conn = cx_Oracle.connect(user=DB_USER, password=DB_PASSWORD, dsn=DB_DSN)
+
+   cursor = conn.cursor()
+
+   print(" Connection successful!\n")
+
+except cx_Oracle.DatabaseError as e:
+
+   print(" Database connection failed:", e)
+
+   exit()
+
+try:
+
+   cursor.execute("SELECT id, password FROM usersmss")
+
+   rows = cursor.fetchall()
+
+   if rows:
+
+       print("All records in usersmss table:")
+
+       print("-" * 30)
+
+       for row in rows:
+
+           print(f"ID: '{row[0]}', PASSWORD: '{row[1]}'")
+
+       print("-" * 30)
+
+       print(f"Total rows: {len(rows)}")
+
+   else:
+
+       print(" usersmss table is empty!")
+
+except cx_Oracle.DatabaseError as e:
+
+   print("Query failed:", e)
+
+finally:
+
+   cursor.close()
+
+   conn.close()
