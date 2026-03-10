@@ -1,3 +1,5 @@
+1. multiply 2 matrices
+
 from flask import Flask, jsonify
 app = Flask(__name__)
 
@@ -8,6 +10,8 @@ R=[[sum(A[i][k]*B[k][j] for k in range(2)) for j in range(2)] for i in range(2)]
 return jsonify({"A":A,"B":B,"Result":R})
 
 app.run(port=8080)
+.......................................
+2. generate even numbers
 
 from flask import Flask, request, jsonify
 app = Flask(__name__)
@@ -18,6 +22,8 @@ n = int(request.args.get("n",10))
 return jsonify({"even":[2*i for i in range(1,n+1)]})
 
 app.run(port=5000)
+.........................................
+3. nth largest number
 
 from flask import Flask, jsonify
 app = Flask(__name__)
@@ -29,8 +35,8 @@ n = 1
 return jsonify({"nth_largest": sorted(nums, reverse=True)[n-1]})
 
 app.run(port=5004)
-
-
+.......................................................
+4. sign up, login, connection.py
 
 from flask import Flask, request, jsonify, render_template_string
 
@@ -284,6 +290,7 @@ if __name__ == '__main__':
 Implementation of Login page with SQL
 
  
+connection.py
 
 import cx_Oracle
 
